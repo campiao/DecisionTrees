@@ -26,4 +26,6 @@ def read_csv():
         values_of_attr[a] = np.unique(input_data[:, index])
     tree = learn_decision_tree(input_data, attributes, [], positives, negatives, unique_values,
                         values_of_attr)
+    print(attributes)
+    print(input_data)
     print(tree)

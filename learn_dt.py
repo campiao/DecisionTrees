@@ -13,10 +13,10 @@ def learn_decision_tree(examples, attributes, parent_examples, pos, neg, unique_
     elif not np.any(attributes):
         return plurality_value(examples)
     else:
-        max_attr = [2, ""]
+        max_attr = [0, ""]
         for a in attributes:
             gain = importance(a, examples, pos, neg, unique_v)
-            if gain < max_attr[0]:
+            if gain > max_attr[0]:
                 max_attr[0] = gain
                 max_attr[1] = a
         A = max_attr[1]
@@ -54,7 +54,7 @@ def importance(attribute, examples, positives, negatives, unique_values):
 
 
 def boolean_random_variable_entropy(prob):
-    return (prob * math.log2(prob) + (1 - prob) * math.log2(1 - prob))
+    return -(prob * math.log2(prob) + (1 - prob) * math.log2(1 - prob))
 
 
 def plurality_value(examples):
