@@ -5,6 +5,8 @@ import pandas as pd
 
 from decisiontree import DecisionTree
 
+global attribute_possible_values
+
 
 def main():
     parser = ArgumentParser("Decision Tree Generator using ID3 Algorithm")
@@ -20,11 +22,15 @@ def main():
 
     with open(args.examples, 'rt') as db:
         training_data = pd.read_csv(db)
+        global attribute_possible_values
+        attribute_possible_values = {}
+        for collumn in training_data.columns:
+            attribute_possible_values[collumn] = training_data[collumn].unique()
         label = training_data.columns[-1]
         tree = ID3(training_data, label)
-        print(tree)
         print('Decision Tree:')
         print_tree(tree)
+
 
 def total_entropy(examples, label, possible_lables):
     number_rows = examples.shape[0]
@@ -56,7 +62,6 @@ def info_gain(attribute, examples, label, possible_labels):
     attr_possible_values = examples[attribute].unique()
     number_rows = examples.shape[0]
     attr_info_gain = 0.0
-    print(number_rows)
 
     for attr_value in attr_possible_values:
         attr_value_examples = examples[examples[attribute] == attr_value]
@@ -70,7 +75,6 @@ def info_gain(attribute, examples, label, possible_labels):
 
 def most_info_gain(examples, label, possible_labels):
     possible_attributes = examples.columns.drop([label, 'ID'])
-    print(possible_attributes)
 
     max_info_gain = -1
     max_info_attribute = None
@@ -86,6 +90,11 @@ def most_info_gain(examples, label, possible_labels):
 
 def generate_branch(attribute, examples, label, possible_labels):
     attr_values_dict = examples[attribute].value_counts(sort=False)
+    global attribute_possible_values
+    possible_val = attribute_possible_values[attribute]
+    for value in possible_val:
+        if value not in attr_values_dict.keys():
+            attr_values_dict[value] = 0
     branch = {}
     next_examples = examples.copy()  # Cria uma cópia dos exemplos
 
@@ -97,14 +106,14 @@ def generate_branch(attribute, examples, label, possible_labels):
             label_positives = attr_value_examples[attr_value_examples[label] == label_value].shape[0]
 
             if label_positives == positives:
-                branch[attr_value] = label_value
+                branch[attr_value] = (label_value, label_positives)
                 next_examples = next_examples[next_examples[attribute] != attr_value]
                 isPure = True
 
         if not isPure:
-            branch[attr_value] = '?'
+            branch[attr_value] = ('?', 0)
 
-    if branch and next_examples.shape[0] > 0:
+    if branch:
         return branch, next_examples
     else:
         return None, None
@@ -128,10 +137,9 @@ def build_tree(root, previous_attr_value, examples, label, possible_labels):
             return
 
         for node, branch in list(next_node.items()):
-            if branch == '?':
+            if branch[0] == '?':
                 attr_value_examples = examples[examples[max_info_attr] == node]
                 build_tree(next_node, node, attr_value_examples, label, possible_labels)
-
 
 
 def ID3(data, label):
@@ -141,6 +149,7 @@ def ID3(data, label):
     build_tree(tree, None, training_data, label, possible_labels)
     return tree
 
+
 def print_tree(tree, indent=''):
     if isinstance(tree, dict):
         for key, value in tree.items():
@@ -148,11 +157,13 @@ def print_tree(tree, indent=''):
                 print(f'{indent}{key}:')
                 print_tree(value, indent + '  ')
             else:
-                print(f'{indent}{key}: {value}')
+                if value is None:
+                    print(f'{indent}None')
+                    continue
+                print(f'{indent}{key}: {value[0]}  ({value[1]})')
 
 
 if __name__ == '__main__':
     main()
-
 
 ## campiao = pd.read_csv('champ.csv')
