@@ -23,7 +23,8 @@ def main():
         label = training_data.columns[-1]
         tree = ID3(training_data, label)
         print(tree)
-
+        print('Decision Tree:')
+        print_tree(tree)
 
 def total_entropy(examples, label, possible_lables):
     number_rows = examples.shape[0]
@@ -86,23 +87,27 @@ def most_info_gain(examples, label, possible_labels):
 def generate_branch(attribute, examples, label, possible_labels):
     attr_values_dict = examples[attribute].value_counts(sort=False)
     branch = {}
+    next_examples = examples.copy()  # Cria uma cópia dos exemplos
 
     for attr_value, positives in attr_values_dict.iteritems():
         attr_value_examples = examples[examples[attribute] == attr_value]
         isPure = False
 
         for label_value in possible_labels:
-            label_positives = examples[examples[label] == label_value].shape[0]
+            label_positives = attr_value_examples[attr_value_examples[label] == label_value].shape[0]
 
             if label_positives == positives:
                 branch[attr_value] = label_value
-                examples = examples[examples[attribute] != attr_value]
+                next_examples = next_examples[next_examples[attribute] != attr_value]
                 isPure = True
 
         if not isPure:
             branch[attr_value] = '?'
 
-    return branch, examples
+    if branch and next_examples.shape[0] > 0:
+        return branch, next_examples
+    else:
+        return None, None
 
 
 def build_tree(root, previous_attr_value, examples, label, possible_labels):
@@ -119,10 +124,14 @@ def build_tree(root, previous_attr_value, examples, label, possible_labels):
             root[max_info_attr] = tree
             next_node = root[max_info_attr]
 
+        if next_node is None:  # Verifica se não há mais ramos para explorar
+            return
+
         for node, branch in list(next_node.items()):
             if branch == '?':
                 attr_value_examples = examples[examples[max_info_attr] == node]
                 build_tree(next_node, node, attr_value_examples, label, possible_labels)
+
 
 
 def ID3(data, label):
@@ -132,6 +141,17 @@ def ID3(data, label):
     build_tree(tree, None, training_data, label, possible_labels)
     return tree
 
+def print_tree(tree, indent=''):
+    if isinstance(tree, dict):
+        for key, value in tree.items():
+            if isinstance(value, dict):
+                print(f'{indent}{key}:')
+                print_tree(value, indent + '  ')
+            else:
+                print(f'{indent}{key}: {value}')
+
 
 if __name__ == '__main__':
     main()
+
+
