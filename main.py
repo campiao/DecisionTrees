@@ -155,3 +155,4 @@ if __name__ == '__main__':
     main()
 
 
+## campiao = pd.read_csv('champ.csv')
