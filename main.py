@@ -6,13 +6,10 @@ import pandas as pd
 global attribute_possible_values
 
 
-
-
 def main():
     parser = ArgumentParser("Decision Tree Generator using ID3 Algorithm")
     parser.add_argument('-e', '--examples', help='CSV file name to train the learning tree')
     parser.add_argument('-t', '--tests', help='CSV file name to test the learning tree obtained')
-    parser.add_argument('-p', '--print', action='store_true', help='print the decision tree')
 
     args = parser.parse_args()
 
@@ -37,7 +34,7 @@ def main():
             test_data = pd.read_csv(td)
 
             predictions = []
-            for _,row in test_data.iterrows():
+            for _, row in test_data.iterrows():
                 prediction = transverse_tree(tree, row)
                 predictions.append(prediction)
             print(f"Predictions: {predictions}")
@@ -78,19 +75,19 @@ def transverse_tree(tree, row):
 
 def total_entropy(examples, label, possible_lables):
     number_rows = examples.shape[0]
-    entropy = 0
+    entropy_value = 0
 
     for label_value in possible_lables:
         number_label_cases = examples[examples[label] == label_value].shape[0]
         label_entropy = -(number_label_cases / number_rows) * np.log2(number_label_cases / number_rows)
-        entropy += label_entropy
+        entropy_value += label_entropy
 
-    return entropy
+    return entropy_value
 
 
 def entropy(examples, label, possible_labels):
     number_rows = examples.shape[0]
-    entropy = 0
+    entropy_value = 0
 
     for label_value in possible_labels:
         number_label_cases = examples[examples[label] == label_value].shape[0]
@@ -98,8 +95,8 @@ def entropy(examples, label, possible_labels):
         if number_label_cases != 0:
             label_prob = number_label_cases / number_rows
             label_entropy = -(label_prob * np.log2(label_prob))
-        entropy += label_entropy
-    return entropy
+        entropy_value += label_entropy
+    return entropy_value
 
 
 def info_gain(attribute, examples, label, possible_labels):
@@ -210,11 +207,11 @@ def generate_branch_cont(attribute, examples, label, possible_labels, parent_exa
     subset1 = examples[examples[attribute] <= best_value_split]
     subset2 = examples[examples[attribute] > best_value_split]
 
-    subsets = [(subset1,f"<={best_value_split}") , (subset2, f">{best_value_split}")]
+    subsets = [(subset1, f"<={best_value_split}"), (subset2, f">{best_value_split}")]
 
     next_examples = examples.copy()
     branch = {}
-    for dataset,value in subsets:
+    for dataset, value in subsets:
         isPure = False
 
         for label_value in possible_labels:
@@ -246,9 +243,7 @@ def build_tree(root, previous_attr_value, examples, label, possible_labels, pare
             flag = False
         else:
             tree, next_examples = generate_branch_cont(max_info_attr, examples, label, possible_labels, parent_examples)
-            print(examples)
             flag = True
-        next_node = None
 
         if previous_attr_value is not None:
             root[previous_attr_value] = {}
@@ -257,9 +252,6 @@ def build_tree(root, previous_attr_value, examples, label, possible_labels, pare
         else:
             root[max_info_attr] = tree
             next_node = root[max_info_attr]
-
-        if next_node is None:  # Verifica se não há mais ramos para explorar
-            return
 
         for node, branch in list(next_node.items()):
             if branch[0] == '?':
