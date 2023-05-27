@@ -179,7 +179,7 @@ def generate_branch(attribute, examples, label, possible_labels, parent_examples
     branch = {}
     next_examples = examples.copy()  # Cria uma cópia dos exemplos
 
-    for attr_value, positives in attr_values_dict.iteritems():
+    for attr_value, positives in attr_values_dict.items():
         attr_value_examples = examples[examples[attribute] == attr_value]
         isPure = False
 
