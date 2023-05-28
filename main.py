@@ -136,14 +136,7 @@ def most_info_gain(examples, label, possible_labels, possible_attributes):
 
 def most_common_label(parent_examples):
     labels = parent_examples.iloc[:, -1]
-    label_values = {}
-    for value in labels:
-        if value not in label_values.keys():
-            label_values[value] = 1
-        else:
-            label_values[value] += 1
-    tmp = dict(sorted(label_values.items(), key=lambda item: item[1]))
-    return next(iter(tmp))
+    return labels.value_counts().idxmax()
 
 
 def calculate_best_split_value(examples, attribute, label, possible_labels):
@@ -262,7 +255,7 @@ def build_tree(root, previous_attr_value, examples, label, possible_labels, pare
             root[previous_attr_value] = (label_value, examples.shape[0])
             return
         max_info_attr = most_info_gain(examples, label, possible_labels, possible_attributes)
-        possible_attributes = possible_attributes.drop(max_info_attr)
+        remaining_attr = possible_attributes.drop(max_info_attr)
         split_value = None
         if examples[max_info_attr].dtype == 'object':
             tree, next_examples = generate_branch(max_info_attr, examples, label, possible_labels, parent_examples)
@@ -289,14 +282,15 @@ def build_tree(root, previous_attr_value, examples, label, possible_labels, pare
                         attr_value_examples = next_examples[next_examples[max_info_attr] > split_value]
                 else:
                     attr_value_examples = next_examples[next_examples[max_info_attr] == node]
-                build_tree(next_node, node, attr_value_examples, label, possible_labels, examples, possible_attributes)
+                build_tree(next_node, node, attr_value_examples, label, possible_labels, examples, remaining_attr)
 
 
 def ID3(data, label):
     training_data = data.copy()
     tree = {}
     possible_labels = training_data[label].unique()
-    possible_attributes = training_data.columns.drop([label, 'ID'])
+    id_name = training_data.columns[0]
+    possible_attributes = training_data.columns.drop([label, id_name])
     build_tree(tree, None, training_data, label, possible_labels, training_data, possible_attributes)
     return tree
 
