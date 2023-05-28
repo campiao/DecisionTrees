@@ -37,13 +37,7 @@ def main():
             for _, row in test_data.iterrows():
                 prediction = transverse_tree(tree, row)
                 predictions.append(prediction)
-            correct = training_data[label].tolist()
-            accuracy = 0
-            for i in range(len(predictions)):
-                if predictions[i] == correct[i]:
-                    accuracy += 1
-            accuracy /= len(training_data)
-            print(f"Predictions: {predictions}\nAccuracy: {accuracy}")
+            print(f"Predictions: {predictions}")
 
 
 def transverse_tree(tree, row):
