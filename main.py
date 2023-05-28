@@ -47,17 +47,19 @@ def main():
 
 
 def transverse_tree(tree, row):
+    """
+    Transverse the decision tree to predict the label/class for the given input row
+    :param tree: decision tree implemented as a dictionary
+    :param row: a row of the tests dataset
+    :return: Predicted value based on the decision tree
+    """
     for attr, subtree in tree.items():
         value = row[attr]
         if isinstance(subtree, dict):
-            if isinstance(value, str) and value not in subtree:
-                return None  # Value not present in the tree, return None
 
             if isinstance(value, str):
                 if value in subtree:
                     subtree = subtree[value]
-                else:
-                    return None  # Value not present in the tree, return None
             else:
                 split_operator, split_value = list(subtree.keys())[0].split()
                 if split_operator == '<=':
@@ -78,22 +80,14 @@ def transverse_tree(tree, row):
         else:
             return subtree[0]
 
-
-def total_entropy(examples, label, possible_lables):
-    number_rows = examples.shape[0]
-    entropy_value = 0
-
-    for label_value in possible_lables:
-        number_label_cases = examples[examples[label] == label_value].shape[0]
-        label_entropy = 0
-        if number_label_cases > 0:
-            label_entropy = -(number_label_cases / number_rows) * np.log2(number_label_cases / number_rows)
-        entropy_value += label_entropy
-
-    return entropy_value
-
-
 def entropy(examples, label, possible_labels):
+    """
+    Calculates the entropy of the given examples
+    :param examples: Pandas DataFrame with a subset of the training_data
+    :param label: Name of the label column
+    :param possible_labels: Possible values os the labels
+    :return: Entropy of the given examples
+    """
     number_rows = examples.shape[0]
     entropy_value = 0
 
@@ -108,6 +102,11 @@ def entropy(examples, label, possible_labels):
 
 
 def info_gain(attribute, examples, label, possible_labels):
+    """
+    Calculates the information gain of the attribute for the given examples
+    :param attribute: Name of the attribute to calculate its information game
+    :return: Information gain of the attribute
+    """
     attr_possible_values = examples[attribute].unique()
     number_rows = examples.shape[0]
     attr_info_gain = 0.0
@@ -119,10 +118,15 @@ def info_gain(attribute, examples, label, possible_labels):
         attr_value_prob = attr_value_number_rows / number_rows
         attr_info_gain += attr_value_prob * attr_value_entropy
 
-    return total_entropy(examples, label, possible_labels) - attr_info_gain
+    return entropy(examples, label, possible_labels) - attr_info_gain
 
 
 def most_info_gain(examples, label, possible_labels, possible_attributes):
+    """
+    Determines the attribute that results in the most information gain
+    :param possible_attributes: List of all possible attributes
+    :return: The attribute that results in the most information gain
+    """
     max_info_gain = -1
     max_info_attribute = None
 
@@ -135,11 +139,21 @@ def most_info_gain(examples, label, possible_labels, possible_attributes):
 
 
 def most_common_label(parent_examples):
+    """
+    Determines the most common label of the parent examples. Runs where there are no child
+    examples
+    :param parent_examples: Pandas DataFrame
+    :return: The most common label
+    """
     labels = parent_examples.iloc[:, -1]
     return labels.value_counts().idxmax()
 
 
 def calculate_best_split_value(examples, attribute, label, possible_labels):
+    """
+    Calcules the best value to split the examples in two subsets, <= and >
+    :return: The best split value
+    """
     attribute_values = sorted(examples[attribute].unique().tolist())
     best_split_value = None
     best_information_gain = float('-inf')
@@ -162,7 +176,7 @@ def calculate_best_split_value(examples, attribute, label, possible_labels):
         entropy1 = entropy(less_equal, label, possible_labels)
         entropy2 = entropy(bigger, label, possible_labels)
 
-        information_gain = total_entropy(examples, label, possible_labels) - (q1 * entropy1) - (q2 * entropy2)
+        information_gain = entropy(examples, label, possible_labels) - (q1 * entropy1) - (q2 * entropy2)
 
         if information_gain > best_information_gain:
             best_information_gain = information_gain
@@ -172,6 +186,13 @@ def calculate_best_split_value(examples, attribute, label, possible_labels):
 
 
 def generate_branch(attribute, examples, label, possible_labels, parent_examples):
+    """
+    Generates a branch of the decision tree as a dictionary, as the attribute value
+    as the key and a tuple of the label value and a counter of the examples that
+    have that attribute value
+    :param parent_examples: Parent examples of the examples dataframe
+    :return: The resulting branch and the next examples that satisfy the branch condition
+    """
     attr_values_dict = examples[attribute].value_counts(sort=False)
     global attribute_possible_values
     possible_val = attribute_possible_values[attribute]
@@ -205,6 +226,11 @@ def generate_branch(attribute, examples, label, possible_labels, parent_examples
 
 
 def generate_branch_cont(attribute, examples, label, possible_labels, parent_examples):
+    """
+    The same as the generate_branch function but with modifications to handle continuous
+    values. The key of the branch is a condition instead of a specific value
+    :return: The resulting branch and the next examples that satisfy the branch condition
+    """
     best_value_split = calculate_best_split_value(examples, attribute, label, possible_labels)
     less_equal = examples[examples[attribute] <= best_value_split]
     bigger = examples[examples[attribute] > best_value_split]
@@ -249,6 +275,14 @@ def generate_branch_cont(attribute, examples, label, possible_labels, parent_exa
 
 
 def build_tree(root, previous_attr_value, examples, label, possible_labels, parent_examples, possible_attributes):
+    """
+    Recursive function to build the decision tree
+    :param root: Root of the tree at the moment, represents a node
+    :param previous_attr_value: Previous value of the previous attribute
+    :param possible_attributes: List of all possible attributes that is updated each time
+    an attribute is analysed as the max information gain attribute
+    :return: Returns when there are no more examples to analyse or no more possible attributes
+    """
     if examples.shape[0] != 0:
         if not possible_attributes.any():
             label_value = most_common_label(parent_examples)
@@ -286,6 +320,12 @@ def build_tree(root, previous_attr_value, examples, label, possible_labels, pare
 
 
 def ID3(data, label):
+    """
+    Initialize the ID3 algorithm to build the decision tree
+    :param data: Training DataFrame
+    :param label: Label name
+    :return: The decision tree
+    """
     training_data = data.copy()
     tree = {}
     possible_labels = training_data[label].unique()
@@ -296,6 +336,11 @@ def ID3(data, label):
 
 
 def print_tree(tree, indent=''):
+    """
+    Recursive function to print the decision tree
+    :param tree: Decision tree as a dicionary
+    :param indent: Indent of each line that is updated recursively
+    """
     if isinstance(tree, dict):
         for key, value in tree.items():
             if isinstance(value, dict):
